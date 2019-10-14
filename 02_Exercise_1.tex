@@ -1,44 +1,95 @@
 
-\chapter*{Exercise 1}
+\section*{Exercise 1}
 
-Using 1000 randomly selected sub-periods of 500 days, we analyse the stability of the weights of the optimal portfolio when using different samples to estimate the population parameters.\par \smallskip
+Using 1000 randomly selected subperiods of 500 days, we need to show the instability of the weights of the optimal portfolio when we
+\begin{enumerate}
+\item update $\mu$ and $\Sigma$, meaning that we only use the subsample of 500 days instead of the entire sample of approximately 2000 days to calculate expected log-returns and volatility; 
+\item update $\mu$ only, and we use the covariance matrix for the entire sample;
+\item update $\Sigma$ only.
+\end{enumerate}
 
-Whilst solving this issue, we understand the importance of the number of days of observations needed in order to obtain a stable (i.e. invertible) covariance matrix: a minimum number of observations required to allow us to solve the Markowitz problem without excessively amplifying the magnitude of the optimal weights. \\
-An efficient and time-saving method to compute the covariance matrix requires the determination of the eigenvalues and corresponding eigenvectors of the covariance matrix in order to apply a spectral decomposition. Using the spectral theorem implies building two matrices:
-
+Figure \ref{fig1} demonstrates the instability of the weights for the first 20 stocks of our dataset. We limited our boxplots to the first 20 stocks in order to give the reader a clearer view of the results, it has to be stressed that our calculations are not limited to 20 stocks but they include all the stocks composing the S\&P500. 
+What we learned while doing this exercise is the importance of the number of days of observations we need in order to have a stable (here meaning invertible) covariance matrix that allows us to solve the Markowitz algorithm without excessively amplifying the magnitude of the optimal weights. An efficient and time-saving method to calculate the covariance matrix while using a computer is to use eigenvalues and eigenvectors to apply the spectral decomposition theorem. Applying the spectral theorem means building two matrices:
 \begin{itemize}
-    \item The first is a diagonal matrix with eigenvalues on the diagonal and zeros elsewhere.
-    \item The second is built combining eigenvectors by column.
+\item	The first one is a diagonal matrix with eigenvalues on the diagonal and zeros elsewhere
+\item The second one is built combining eigenvectors by column
 \end{itemize}
-Note that the inverse of a diagonal matrix $ C $ such as the former is also a diagonal matrix $ D $ with coefficients $ d_{ii} $ on the diagonal such that \(d_{ii}=\frac{1}{c_{ii}}\). \\
-When $ c_{ii} $ tends to $ 0 $, $ d_{ii} $ tends to infinity and the stability of any linear transformation resulting from this matrix collapses.
-\par\smallskip
-
+Notice that the inverse of a diagonal matrix with the same allure of the first one just described is the same matrix but with coefficients on the diagonal in the form of $1/c_{ij}$ where $c_{ij}$ denotes the coefficients of the original matrix. When $c_{ij}$ are close to zero $1/c_{ij}$  tends to infinity and the correctness/stability of any linear transformation resulting from this matrix collapses.
 When too few observations are used to calculate the covariance matrix, the risk of having very small coefficient on the diagonal grows. The unwanted result reflected on weights instability while applying the Markowitz optimization.
-\par\smallskip
-In the first series of graphs we’re interested in determining whether the optimal weights variability is due to the sensibility of the estimate of m$\mu$ or $\Sigma$. We define three cases:
+In the first series of graphs we are interested in determining whether the optimal weights variability is due to the sensibility of the estimate of mu or sigma.
+In the first boxplot we determine the optimal weights using both mu and sigma estimates of the same subsample.
+In the second boxplot we determine the optimal weights using the estimate of mu of the same subsample and the estimate of sigma of the entire sample.
+In the third boxplot we determine the optimal weights using the estimate of sigma of the same subsample and the estimate of sigma of the entire sample.
+As a result we see that weights instability and variability is primarily due to the estimation of sigma.
 
-\begin{itemize}
-\item $\mu$ and $\Sigma$ updated: implying we use the sub-sample of 500 days to compute both: expected log-returns and covariance matrix.
-\item $\mu$ updated, sub-sample expected returns and full-sample covariance matrix.
-\item $\Sigma$ updated, full-sample expected returns and sub-sample covariance matrix.
-\end{itemize}
-
-\newpage
-Here we limit our box-plots to the first 20 stocks in order to give the reader a clearer view of the results, it has to be stressed that our calculations and their subsequent results include all 452 stocks from the original data-set.
-\par\smallskip
-Figure \ref{fig1} demonstrates the stability of the weights for the first 20 stocks of our data-set.\par
-The first box-plot shows that the weights are unstable when using the sub-sample of 500 days to determine the optimal allocation by estimating the expected stock returns and volatility.\par
-The second shows that using the full-sample to estimate the covariance matrix and the sub-sample to estimate the expected returns results in an apparent stability of the weights regardless of the stock or sub-sample used.\par
-The third box-plot shows that using the full-sample to estimate the expected returns and the sub-sample to estimate the covariance provides little to no improvement on the stability of the weights compared to the first case scenario. 
 
 \begin{figure}[H]
-\includegraphics[width=14cm]{Boxplot_question_1.pdf}
-\caption{Weight stability for a sub-sample of 500 days}
+\includegraphics[width=15cm]{Boxplot_question_1.pdf}
+\caption{Weight stability for a subsample of 500 days}
 \label{fig1}
 \end{figure}
 
-As a result, we understand that weight instability and variability is primarily due to the estimation of $\Sigma$.
-\par\smallskip
-We conclude that we need a good estimation of the covariance matrix in order to calculate stable weights for our optimal portfolio. In our example we needed at least a sample size of 500 to get an invertible covariance matrix for 452 stocks, but this sample size is not sufficient to compute stable weights.  
+
+We have used the following R code to generate boxplots: 
+\begin{verbatim}
+
+X=read.delim("data_lausanne_equity.csv",sep=";",header=FALSE)
+X=diff(as.matrix(log(X)),1)
+
+#Markowitz
+mu=apply(X,2,mean)
+sigma=cov(X)
+sigmainv=solve(sigma)
+gamma=3
+w=1/gamma*sigmainv%*%mu
+
+#subsampling
+wtotal=c()            		#creates a vector to store the weights
+wsigma=c()
+wmu=c()
+count=0                 		#counter defined and set to 0
+for (i in 1:1000)        		#starts a 1000 rounds loop
+{
+ #generates a random number/date from the dataset matrix X 
+  u=round(runif(1,500,nrow(X)),0)               	
+  
+  #creates a vector sample of 500 dates ending at day u					
+  sample=X[(u-499):(u),]           
+  
+  #tests if sigma inverse can be calculated            		
+  check=try(solve(var(sample)),silent=TRUE) 
  
+  #if sigma is not invertible (try failed)   
+  if (is.character(check))                     			
+    {
+      count=count+1            
+    } else                                      			
+    { 
+      #calculates the mean of the subsample
+      mutemp=apply(sample,2,mean)     
+   
+      #calculates sigma inverse of the subsample
+      sigmainvtemp=solve(cov(sample))    
+
+      #computes Markowitz weights using the sigma of the subsample 
+      #and the population mean
+      temp=1/gamma*sigmainvtemp%*%mu        
+      wsigma=rbind(wsigma,t(temp))         
+      
+      #computes Markowitz using subsample mean and sigma  	 
+      temp=1/gamma*sigmainvtemp%*%mutemp        
+      wtotal=rbind(wtotal,t(temp))     
+      
+      #computes Markowitz using the population sigma and the subsample mean      		 
+      temp=1/gamma*sigmainv%*%mutemp            
+      wmu=rbind(wmu,t(temp))                   		 
+      }
+}
+#plotting the results
+layout(matrix(1:3,1,3))
+boxplot([wtotal,1:20], main="mu and sigma updated", ylim=c(-400,400))
+boxplot(wmu[,1:20], main="mu updated", ylim=c(-400,400))
+boxplot(wsigma[,1:20], main="sigma updated", ylim=c(-400,400))
+
+\end{verbatim}
+\newpage
