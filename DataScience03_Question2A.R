@@ -65,26 +65,13 @@ for (i in 1:1000)        #starts a 500 rounds boucle
     Sigmashrinktemp=F_Mat*wshrink+((1-wshrink)*diag(452))%*%sigmainvtemp
     Sigmashrinkinvtemp=solve(Sigmashrinktemp)
     
-    temp=1/gamma*Sigmashrinkinvtemp%*%mu            
-    #computes markowitz weights using the sigma of
-    #the subsample and the population mean
-    wsigma=rbind(wsigma,t(temp))              
-    #the new sigma is the same sigma plus the vector temp
     temp=1/gamma*Sigmashrinkinvtemp%*%mutemp        
     #computes markowitz using subsample mean and sigma
-    wtotal=rbind(wtotal,t(temp))             
-    #total weight is the 
-    temp=1/gamma*sigmainv%*%mutemp            
-    #computes markowitz using the population sigma and the subsample mean
-    wmu=rbind(wmu,t(temp))                    
-    #the new mu is the same wmu plus the vector temp 
+    wtotal=rbind(wtotal,t(temp))            
   }
   print(c(i,count/500))
 }
 layout(matrix(1:2,1,2))
-
-#boxplot(wsigma[,1:20],ylim=c(-10,10))
-#boxplot(wmu[,1:20],ylim=c(-10,10))
 boxplot(wtotal[,1:20],ylim=c(-400,400), main="regularized")
 
 
